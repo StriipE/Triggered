@@ -8,40 +8,86 @@ namespace Triggered
 {
     public class Parser
     {
-        private String currentParsedTriger;
-        private String[] queries;
+        private List<string> queries;
 
         public Parser()
         {
-            currentParsedTriger = "";
-            queries = new String[100];
+            queries = new List<string>();
         }
 
-        public void parseTrigger( String trigger )
+        public void parseTrigger( string trigger )
         {
-            this.currentParsedTriger = trigger;
-            lookForBooleansOperators();
+            lookForBooleansOperators( trigger );
         }
 
-        private void lookForBooleansOperators()
+        private void lookForBooleansOperators( string trigger )
         {
-            String[] andQueries = findAndQueries();
-            queries.Concat(andQueries);
-            for (int i = 0; i < andQueries.Length; i++)
+            List<string> parenthesisQueries = new List<string>( parseParenthesis(trigger) );
+            List<string> andQueries = new List<string>();
+
+            for (int i = 0; i < parenthesisQueries.Count; i++)
             {
-                Console.WriteLine(andQueries[i]);
+                List<string> tempQueries = new List<string>( findAndQueries(parenthesisQueries[i]) );
+                foreach (string s in tempQueries)
+                    andQueries.Add(s);
             }
 
+            
+            for (int i = 0; i < andQueries.Count; i++)
+            {
+                List<string> tempQueries = new List<string>( findOrQueries(andQueries[i]) );
+                foreach( string s in tempQueries )
+                    queries.Add(s);
+            }
+
+            for (int i = 0; i < queries.Count; i++)
+            {
+                Console.WriteLine(queries[i]);
+            }
         }
 
-        private String[] findAndQueries()
+        // And queries are split with the "A!" block
+        private String[] findAndQueries( String trigger )
         {
-            return this.currentParsedTriger.Split(new string[] { "AX" }, StringSplitOptions.None);
+            return trigger.Split(new string[] { "A!" }, StringSplitOptions.RemoveEmptyEntries);
         }
 
-        private String[] findOrQueries()
+        // Or queries are split with the "O!" block
+        private String[] findOrQueries( String trigger )
         {
-            return this.currentParsedTriger.Split(new string[] { "OX" }, StringSplitOptions.None);
+            return trigger.Split(new string[] { "O!" }, StringSplitOptions.RemoveEmptyEntries);
+        }
+
+        private String[] parseParenthesis( String trigger )
+        {
+            String[] parsedParenthesis = trigger.Split(new string[] { "(", ")" }, StringSplitOptions.RemoveEmptyEntries);
+            return putParenthesisOnFront(parsedParenthesis);
+        }
+
+        // If a parenthesis is parsed, put the parenthesis operation to resolve on front
+        // If no parenthesis are found, don't change anything
+        private String[] putParenthesisOnFront( String[] parsedParenthesis )
+        {
+            String[] result = new String[parsedParenthesis.Length];
+            if (parsedParenthesis.Length > 1)
+            {
+                result[0] = parsedParenthesis[1];
+                result[1] = parsedParenthesis[0];
+                return result;
+            }
+            else
+                return parsedParenthesis;
+            
+
+        }
+        public List<string> getQueries()
+        {
+            return this.queries;
+        }
+
+        public void emptyQueries()
+        {
+            this.queries = new List<string>();
         }
     }
 }
